@@ -245,3 +245,16 @@ view_logs() {
     less "$LOG_FILE"
     pause
 }
+
+# Clear logs
+clear_logs() {
+    read -r -p "Are you sure you want to clear all logs? (y/n): " confirm_clear
+    if [[ "$confirm_clear" == "y" ]]; then
+        > "$LOG_FILE"
+        echo "Logs cleared."
+        log_action "Logs cleared by user."
+    else
+        echo "Clear logs cancelled."
+    fi
+    pause
+}
