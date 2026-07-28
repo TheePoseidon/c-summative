@@ -258,3 +258,36 @@ clear_logs() {
     fi
     pause
 }
+
+# Menu
+show_menu() {
+    clear
+    echo "Linux Backup Manager"
+    echo "===================="
+    echo "1. Create Backup"
+    echo "2. View Backup History"
+    echo "3. Restore Backup"
+    echo "4. Delete Backup"
+    echo "5. View Logs"
+    echo "6. Clear Logs"
+    echo "0. Exit"
+    echo
+    read -r -p "Enter your choice: " choice
+}
+
+main() {
+    while true; do
+        show_menu
+        case "$choice" in
+            1) create_backup ;;
+            2) view_backup_history ;;
+            3) restore_backup ;;
+            4) delete_backup ;;
+            5) view_logs ;;
+            6) clear_logs ;;
+            0) echo "Exiting..."; exit 0 ;;
+            *) echo "Invalid choice. Please try again."; pause ;;
+        esac
+    done
+}
+main
