@@ -83,6 +83,7 @@ create_backup() {
     pause
 }
 
+# List Backups
 list_backups() {
     echo "Available backups:"
     if [ ! -s "$INDEX_FILE" ]; then
@@ -105,6 +106,7 @@ get_backup_field() {
     sed -n "${line_num}p" "$INDEX_FILE" | cut -d'|' -f"$field"
 }
 
+# View Backup History
 view_backup_history() {
     echo "Backup History:"
     if ! list_backups; then
@@ -114,3 +116,71 @@ view_backup_history() {
     pause
 }
 
+# Restore Backup
+restore_backup() {
+    echo "Restore backup"
+    if ! list_backups; then
+        pause
+        return
+    fi
+
+    local total
+    total=$(wc -l < "$INDEX_FILE")
+
+    read -r -p "Enter the backup number to restore (1-$total): " choice
+    if [[ "$choice" == "0" ]]; then
+        echo "Restore cancelled."
+        pause
+        return
+    fi
+
+    if ! is_valid_menu_choice "$choice" 1 "$total"; then
+        echo "Invalid choice. Please try again."
+        pause
+        return
+    fi
+
+    local archive_name source_dir
+    archive_name="$(get_backup_field "$choice" 1)"
+    source_dir="$(get_backup_field "$choice" 2)"
+    local archive_path="${BACKUP_ROOT}/${archive_name}"
+
+    if [ ! -f "$archive_path" ]; then
+        echo "Backup archive not found: $archive_path"
+        log_action "Restore failed: Backup archive not found '$archive_path'"
+        pause
+        return
+    fi
+
+    echo "original source directory: $source_dir"
+    read -r -p "Restore to original source directory? (y/n): " to_original
+
+    local restore_path
+    if [[ "$to_original" =~ ^[Yy]$ ]]; then
+        restore_path="$(dirname "$source_dir")"
+    else
+        read -r -p "Enter the restore directory: " restore_target
+        if [ ! -d "$restore_target" ]; then
+            read -r -p "Directory does not exist. Create it? (y/n): " make_dir
+            if [[ "$make_dir" =~ ^[Yy]$ ]]; then
+                mkdir -p "$restore_target"
+            else
+                echo "Restore cancelled."
+                pause
+                return
+            fi
+        fi
+        restore_path="$restore_target"
+    fi
+
+    echo "Restoring '$archive_name' into '$restore_target'..."
+    if tar =-xzf "$archive_path" -C "$restore_path" 2>/tmp/restore_error.log; then
+        echo "Restore completed successfully."
+        log_action "Restore completed: '$archive_name' to '$restore_path'"
+    else
+        echo "Restore failed. Check /tmp/restore_error.log for details."
+        log_action "Restore failed for '$archive_name' to '$restore_path'. See /tmp/restore_error.log"
+    fi
+
+    pause
+}
