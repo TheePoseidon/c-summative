@@ -184,3 +184,64 @@ restore_backup() {
 
     pause
 }
+
+# Delete Backup
+delete_backup() {
+    echo "Delete backup"
+    if ! list_backups; then
+        pause
+        return
+    fi
+
+    local total
+    total=$(wc -l < "$INDEX_FILE")
+
+    read -r -p "Enter the backup number to delete (1-$total): " choice
+    if [[ "$choice" == "0" ]]; then
+        echo "Delete cancelled."
+        pause
+        return
+    fi
+
+    if ! is_valid_menu_choice "$choice" 1 "$total"; then
+        echo "Invalid choice. Please try again."
+        pause
+        return
+    fi
+
+    local archive_name source_dir archive_path
+    archive_name="$(get_backup_field "$choice" 1)"
+    source_dir="$(get_backup_field "$choice" 2)"
+    archive_path="${BACKUP_ROOT}/${archive_name}"
+
+    read -r -p "Are you sure you want to delete '$archive_name'? (y/n): " confirm_delete
+    if [[ "$confirm_delete" != "y" ]]; then
+        echo "Delete cancelled."
+        pause
+        return
+    fi
+
+    if rm -f "$archive_path"; then
+        sed -i "${choice}d" "$INDEX_FILE"
+        echo "Backup '$archive_name' deleted successfully."
+        log_action "Backup deleted: '$archive_name' from source '$source_dir'"
+    else
+        echo "Failed to delete backup '$archive_name'."
+        log_action "Failed to delete backup '$archive_name' from source '$source_dir'"
+    fi
+
+    pause
+}
+
+# View logs
+view_logs() {
+    echo "Activity Logs:"
+    if [ ! -s "$LOG_FILE" ]; then
+        echo "No logs found."
+        pause
+        return
+    fi
+
+    less "$LOG_FILE"
+    pause
+}
