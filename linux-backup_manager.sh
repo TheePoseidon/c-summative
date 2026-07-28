@@ -99,3 +99,18 @@ list_backups() {
     done < <(awk -F'|' '{print $1 "|" $2 "|" $3 "|" $4}' "$INDEX_FILE")
     return 0
 }
+
+get_backup_field() {
+    local line_num="$1" field="$2"
+    sed -n "${line_num}p" "$INDEX_FILE" | cut -d'|' -f"$field"
+}
+
+view_backup_history() {
+    echo "Backup History:"
+    if ! list_backups; then
+        pause
+        return
+    fi
+    pause
+}
+
