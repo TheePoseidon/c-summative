@@ -34,6 +34,7 @@ is_valid_menu_choice() {
     return 1
 }
 
+# Display disk space
 show_disk_space(){
     local path="$1"
     echo "Disk space for $path:"
@@ -43,3 +44,14 @@ show_disk_space(){
 human_size(){
     du -sh "$1" 2>/dev/null | awk '{print $1}'
 }
+
+# Create Backup
+create_backup() {
+    echo "Create backup"
+    read -r -p "Enter the directory to backup: " source_dir
+    if ! is_valid_directory "$source_dir"; then
+        echo "Invalid directory. Please try again."
+        log_action "Failed backup attempt: Invalid directory '$source_dir'"
+        pause
+        return
+    fi
