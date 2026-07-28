@@ -82,3 +82,20 @@ create_backup() {
     fi
     pause
 }
+
+list_backups() {
+    echo "Available backups:"
+    if [ ! -s "$INDEX_FILE" ]; then
+        echo "No backups found."
+        return 1
+    fi
+
+    printf "%-4s %-40s %-30s %20s %10s\n" "No." "Archive" "Original Source" "Timestamp" "Size"
+
+    local i=1
+    while IFS='|' read -r name source timestamp size; do
+        printf "%-4s %-40s %-30s %20s %10s\n" "$i" "$name" "$source" "$timestamp" "$size"
+        ((i++))
+    done < <(awk -F'|' '{print $1 "|" $2 "|" $3 "|" $4}' "$INDEX_FILE")
+    return 0
+}
