@@ -33,3 +33,13 @@ is_valid_menu_choice() {
     fi
     return 1
 }
+
+show_disk_space(){
+    local path="$1"
+    echo "Disk space for $path:"
+    df -h "$path" | awk 'NR==1 || NR==2 {print}'
+}
+
+human_size(){
+    du -sh "$1" 2>/dev/null | awk '{print $1}'
+}
