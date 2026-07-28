@@ -55,3 +55,30 @@ create_backup() {
         pause
         return
     fi
+
+    show_disk_space "$BACKUP_ROOT"
+    read -r -p "Continue with backup? (y/n): " confirm
+    if [[ "$confirm" != "y" ]]; then
+        echo "Backup cancelled."
+        log_action "Backup cancelled for directory '$source_dir'"
+        pause
+        return
+    fi
+
+    local timestamp archive_name archive_path dir_base
+    timestamp="$(date '+%Y%m%d_%H%M%S')"
+    dir_base="$(basename "$source_dir")"
+    archive_name="${dir_base}_${timestamp}.tar.gz"
+    archive_path="${BACKUP_ROOT}/${archive_name}"
+
+    echo "Creating backup..."
+    if tar -czf "$archive_path" -C "$(dirname "$source_dir")" "$dir_base" 2>/tmp/backup_error.log; then
+        echo "Backup created successfully: $archive_path"
+        log_action "Backup created: $archive_path from source '$source_dir'"
+        echo "$archive_name" >> "$INDEX_FILE"
+    else
+        echo "Backup failed. Check /tmp/backup_error.log for details."
+        log_action "Backup failed for source '$source_dir'. See /tmp/backup_error.log"
+    fi
+    pause
+}
