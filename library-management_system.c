@@ -110,5 +110,37 @@ int main(void)
 }
 
 # Manage memroy
+int libraryInit(Library *lib)
+{
+    lib->data     = (Book *)malloc(INITIAL_CAP * sizeof(Book));
+    if (lib->data == NULL)
+        return 0;
+    lib->count    = 0;
+    lib->capacity = INITIAL_CAP;
+    return 1;
+}
 
+int libraryFree(Library *lib)
+{
+    if (lib->count < lib->capacity)
+        return 1;
+
+    int   newCap = lib->capacity * 2;
+    Book *tmp    = (Book *)realloc(lib->data, newCap * sizeof(Book));
+    if (tmp == NULL) {
+        fprintf(stderr, "Error: memory reallocation failed. "
+                        "Record not added.\n");
+        return 0;
+    }
+    lib->data     = tmp;
+    lib->capacity = newCap;
+    return 1;
+}
+void libraryFree(Library *lib)
+{
+    free(lib->data);
+    lib->data     = NULL;
+    lib->count    = 0;
+    lib->capacity = 0;
+}
 
