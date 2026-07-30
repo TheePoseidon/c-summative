@@ -54,3 +54,61 @@ void  printHeader(void);
 void  printBook(const Book *b);
 void  printMenu(void);
 
+# Main menu
+
+int main(void)
+ {
+    Library lib;
+    int choice;
+    int unsaved = 0;
+
+    if (!libraryInit(&lib)) {
+        fprintf(stderr, "Fatal: could not allocate initial memory.\n");
+        return EXIT_FAILURE;
+    }
+
+    loadFromFile(&lib);
+    printf("\n");
+    printf("   LIBRARY BOOK INVENTORY MANAGEMEBNT SYSTEM\n");
+    printf("\n");
+
+    do {
+        printMenu();
+        choice = readMenuChoice(0, 8);
+
+        switch (choice) {
+            case 1: addBook(&lib);          unsaved = 1; break;
+            case 2: displayAllBooks(&lib);               break;
+            case 3: updateBook(&lib);       unsaved = 1; break;
+            case 4: deleteBook(&lib);       unsaved = 1; break;
+            case 5: searchMenu(&lib);                    break;
+            case 6: sortMenu(&lib);         unsaved = 1; break;
+            case 7: generateReport(&lib);                break;
+            case 8:
+                if (saveToFile(&lib)) {
+                    printf("Records saved successfully to '%s'.\n", DATA_FILE);
+                    unsaved = 0;
+                }
+                break;
+            case 0:
+                if (unsaved && lib.count > 0) {
+                    char ans[8];
+                    readString("You have unsaved changes. Save before exit? (y/n): ",
+                               ans, sizeof ans);
+                    if (tolower((unsigned char)ans[0]) == 'y') {
+                        if (saveToFile(&lib))
+                            printf("Records saved to '%s'.\n", DATA_FILE);
+                    }
+                }
+                printf("Goodbye!\n");
+                break;
+        }
+    } while (choice != 0);
+
+    libraryFree(&lib);
+    return EXIT_SUCCESS;
+}
+
+# Manage memroy
+
+
