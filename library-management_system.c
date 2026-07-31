@@ -1,146 +1,199 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype>
+#include <ctype.h>
 
-#define TITLE_LEN     100
-#define AUTHOR_LEN    100
-#define CATEGORY_LEN  50
-#define INITIAL_CAP   4
-#define DATA_FILE     "library.dat"
+#define FILE_NAME "library.dat"
 
 typedef struct {
     int  id;
-    char title[TITLE_LEN];
-    char author[AUTHOR_LEN];
-    char category[CATEGORY_LEN];
+    char title[100];
+    char author[100];
+    char category[50];
     int  copies;
 } Book;
 
-typedef struct {
-    Book *data;
-    int   count;
-    int   capacity;
-} Library;
+Book *books = NULL;
+int count = 0, capacity = 0;
 
-int   libraryInit(Library *lib);
-int   libraryEnsureCapacity(Library *lib);
-void  libraryFree(Library *lib);
-
-void  flushInput(void);
-int   readInt(const char *prompt, int min, int max);
-void  readString(const char *prompt, char *buffer, int size);
-int   readMenuChoice(int min, int max);
-void  toLowerStr(const char *src, char *dst, int size);
-
-void  addBook(Library *lib);
-void  displayAllBooks(const Library *lib);
-void  updateBook(Library *lib);
-void  deleteBook(Library *lib);
-
-int   findIndexById(const Library *lib, int id);
-void  searchMenu(const Library *lib);
-void  searchById(const Library *lib);
-void  searchByTitle(const Library *lib);
-void  sortMenu(Library *lib);
-void  swapBooks(Book *a, Book *b);
-void  sortById(Library *lib);
-void  sortByTitle(Library *lib);
-void  sortByCopies(Library *lib);
-void  generateReport(const Library *lib);
-int   saveToFile(const Library *lib);
-int   loadFromFile(Library *lib);
-void  printHeader(void);
-void  printBook(const Book *b);
-void  printMenu(void);
-
-# Main menu
-
-int main(void)
- {
-    Library lib;
-    int choice;
-    int unsaved = 0;
-
-    if (!libraryInit(&lib)) {
-        fprintf(stderr, "Fatal: could not allocate initial memory.\n");
-        return EXIT_FAILURE;
+int readInt(const char *prompt, int min, int max) {
+    char line[64]; int v; char extra;
+    while (1) {
+        printf("%s", prompt);
+        if (!fgets(line, sizeof line, stdin)) exit(1);
+        if (sscanf(line, "%d %c", &v, &extra) == 1 && v >= min && v <= max)
+            return v;
+        printf("  Invalid input. Enter a number between %d and %d.\n", min, max);
     }
+}
+void readString(const char *prompt, char *buf, int size) {
+    while (1) {
+        printf("%s", prompt);
+        if (!fgets(buf, size, stdin)) exit(1);
+        buf[strcspn(buf, "\n")] = '\0';
+        if (buf[0] != '\0') return;
+        printf("  Input cannot be empty.\n");
+    }
+}
+int ensureCapacity(void) {
+    if (count < capacity) return 1;
+    int newCap = capacity ? capacity * 2 : 4;
+    Book *tmp = realloc(books, newCap * sizeof(Book));
+    if (!tmp) { printf("Error: memory allocation failed.\n"); return 0; }
+    books = tmp; capacity = newCap;
+    return 1;
+}
+int findById(int id) {
+    for (int i = 0; i < count; i++)
+        if (books[i].id == id) return i;
+    return -1;
+}
 
-    loadFromFile(&lib);
+void printBook(Book *b) {
+    printf("%-6d %-30.30s %-20.20s %-15.15s %6d\n",
+           b->id, b->title, b->author, b->category, b->copies);
+}
+
+void printHeader(void) {
+    printf("%-6s %-30s %-20s %-15s %6s\n", "ID", "Title", "Author", "Category", "Copies");
     printf("\n");
-    printf("   LIBRARY BOOK INVENTORY MANAGEMEBNT SYSTEM\n");
-    printf("\n");
+}
 
-    do {
-        printMenu();
-        choice = readMenuChoice(0, 8);
+void displayAll(void) {
+    if (count == 0) { printf("Inventory is empty.\n"); return; }
+    printHeader();
+    for (int i = 0; i < count; i++) printBook(&books[i]);
+}
 
-        switch (choice) {
-            case 1: addBook(&lib);          unsaved = 1; break;
-            case 2: displayAllBooks(&lib);               break;
-            case 3: updateBook(&lib);       unsaved = 1; break;
-            case 4: deleteBook(&lib);       unsaved = 1; break;
-            case 5: searchMenu(&lib);                    break;
-            case 6: sortMenu(&lib);         unsaved = 1; break;
-            case 7: generateReport(&lib);                break;
-            case 8:
-                if (saveToFile(&lib)) {
-                    printf("Records saved successfully to '%s'.\n", DATA_FILE);
-                    unsaved = 0;
-                }
-                break;
-            case 0:
-                if (unsaved && lib.count > 0) {
-                    char ans[8];
-                    readString("You have unsaved changes. Save before exit? (y/n): ",
-                               ans, sizeof ans);
-                    if (tolower((unsigned char)ans[0]) == 'y') {
-                        if (saveToFile(&lib))
-                            printf("Records saved to '%s'.\n", DATA_FILE);
-                    }
-                }
-                printf("Goodbye!\n");
-                break;
+void addBook(void) {
+    Book b;
+    b.id = readInt("Book ID: ", 1, 999999);
+    if (findById(b.id) != -1) { printf("Error: ID %d already exists.\n", b.id); return; }
+    readString("Title: ", b.title, sizeof b.title);
+    readString("Author: ", b.author, sizeof b.author);
+    readString("Category: ", b.category, sizeof b.category);
+    b.copies = readInt("Copies available: ", 0, 100000);
+    if (!ensureCapacity()) return;
+    books[count++] = b;
+    printf("Book added.\n");
+}
+
+void updateBook(void) {
+    int i = findById(readInt("ID of book to update: ", 1, 999999));
+    if (i == -1) { printf("Book not found.\n"); return; }
+    printHeader(); printBook(&books[i]);
+    readString("New title: ", books[i].title, sizeof books[i].title);
+    readString("New author: ", books[i].author, sizeof books[i].author);
+    readString("New category: ", books[i].category, sizeof books[i].category);
+    books[i].copies = readInt("New copies: ", 0, 100000);
+    printf("Book updated.\n");
+}
+
+void deleteBook(void) {
+    int i = findById(readInt("ID of book to delete: ", 1, 999999));
+    if (i == -1) { printf("Book not found.\n"); return; }
+    for (; i < count - 1; i++) books[i] = books[i + 1];
+    count--;
+    printf("Book deleted.\n");
+}
+
+void searchBooks(void) {
+    int c = readInt("Search by 1) ID  2) Title: ", 1, 2);
+    if (c == 1) {
+        int i = findById(readInt("Book ID: ", 1, 999999));
+        if (i == -1) printf("Book not found.\n");
+        else { printHeader(); printBook(&books[i]); }
+    } else {
+        char q[100]; int found = 0;
+        readString("Title contains: ", q, sizeof q);
+        for (int i = 0; i < count; i++)
+            if (strstr(books[i].title, q)) {
+                if (!found) printHeader();
+                printBook(&books[i]); found = 1;
+            }
+        if (!found) printf("No matching books.\n");
+    }
+}
+
+void sortBooks(void) {
+    int key = readInt("Sort by 1) ID  2) Title  3) Copies: ", 1, 3);
+    for (int i = 0; i < count - 1; i++)
+        for (int j = 0; j < count - 1 - i; j++) {
+            int swap = (key == 1) ? books[j].id > books[j + 1].id
+                     : (key == 2) ? strcmp(books[j].title, books[j + 1].title) > 0
+                                  : books[j].copies < books[j + 1].copies;
+            if (swap) { Book t = books[j]; books[j] = books[j + 1]; books[j + 1] = t; }
         }
-    } while (choice != 0);
-
-    libraryFree(&lib);
-    return EXIT_SUCCESS;
+    printf("Sorted.\n");
+    displayAll();
 }
 
-# Manage memroy
-int libraryInit(Library *lib)
-{
-    lib->data     = (Book *)malloc(INITIAL_CAP * sizeof(Book));
-    if (lib->data == NULL)
-        return 0;
-    lib->count    = 0;
-    lib->capacity = INITIAL_CAP;
-    return 1;
-}
-
-int libraryFree(Library *lib)
-{
-    if (lib->count < lib->capacity)
-        return 1;
-
-    int   newCap = lib->capacity * 2;
-    Book *tmp    = (Book *)realloc(lib->data, newCap * sizeof(Book));
-    if (tmp == NULL) {
-        fprintf(stderr, "Error: memory reallocation failed. "
-                        "Record not added.\n");
-        return 0;
+void report(void) {
+    if (count == 0) { printf("Inventory is empty.\n"); return; }
+    long total = 0; int max = 0;
+    for (int i = 0; i < count; i++) {
+        total += books[i].copies;
+        if (books[i].copies > books[max].copies) max = i;
     }
-    lib->data     = tmp;
-    lib->capacity = newCap;
-    return 1;
-}
-void libraryFree(Library *lib)
-{
-    free(lib->data);
-    lib->data     = NULL;
-    lib->count    = 0;
-    lib->capacity = 0;
+    printf("-- INVENTORY REPORT --\n");
+    printf("Total number of books : %d\n", count);
+    printf("Total copies available: %ld\n", total);
+    printf("Most copies           : \"%s\" (%d copies)\n",
+           books[max].title, books[max].copies);
+    printf("Books per category:\n");
+    int *done = calloc(count, sizeof(int));
+    if (!done) { printf("Error: memory allocation failed.\n"); return; }
+    for (int i = 0; i < count; i++) {
+        if (done[i]) continue;
+        int c = 0;
+        for (int j = i; j < count; j++)
+            if (strcmp(books[i].category, books[j].category) == 0)
+                { c++; done[j] = 1; }
+        printf("  %-15s : %d\n", books[i].category, c);
+    }
+    free(done);
+    printf("\n");
 }
 
+void saveFile(void) {
+    FILE *f = fopen(FILE_NAME, "wb");
+    if (!f) { printf("Error: cannot open file for writing.\n"); return; }
+    fwrite(&count, sizeof count, 1, f);
+    fwrite(books, sizeof(Book), count, f);
+    fclose(f);
+    printf("Saved %d record(s) to %s.\n", count, FILE_NAME);
+}
+
+void loadFile(void) {
+    FILE *f = fopen(FILE_NAME, "rb");
+    if (!f) return;
+    if (fread(&count, sizeof count, 1, f) == 1 && count > 0) {
+        books = malloc(count * sizeof(Book));
+        if (!books || fread(books, sizeof(Book), count, f) != (size_t)count) {
+            printf("Warning: could not load data. Starting empty.\n");
+            free(books); books = NULL; count = 0;
+        } else capacity = count;
+    } else count = 0;
+    fclose(f);
+    if (count) printf("Loaded %d record(s) from %s.\n", count, FILE_NAME);
+}
+
+int main(void) {
+    loadFile();
+    while (1) {
+        printf("\n-- LIBRARY INVENTORY --\n"
+               "1. Add book\n2. Display all\n3. Update book\n4. Delete book\n"
+               "5. Search\n6. Sort\n7. Report\n8. Save to file\n0. Exit\n");
+        switch (readInt("Choice: ", 0, 8)) {
+            case 1: addBook();    break;
+            case 2: displayAll(); break;
+            case 3: updateBook(); break;
+            case 4: deleteBook(); break;
+            case 5: searchBooks();break;
+            case 6: sortBooks();  break;
+            case 7: report();     break;
+            case 8: saveFile();   break;
+            case 0: saveFile(); free(books); return 0;
+        }
+    }
+}

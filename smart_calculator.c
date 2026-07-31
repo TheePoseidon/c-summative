@@ -186,3 +186,10 @@ static void forEachRecord(History *h, RecordCallback cb, void *context)
         cb(&h->records[i], context);
     }
 }
+static void roundToPrecisionCallback(ConversionRecord *rec, void *context)
+{
+    int decimals   = *(const int *)context;
+    double factor  = pow(10.0, decimals);
+    rec->inputValue  = round(rec->inputValue  * factor) / factor;
+    rec->outputValue = round(rec->outputValue * factor) / factor;
+}
