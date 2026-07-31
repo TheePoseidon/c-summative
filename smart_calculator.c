@@ -132,3 +132,57 @@ static int historyInit(History *h)
     }
     return 1;
 }
+
+static int historyAdd(History *h, ConversionRecord rec)
+{
+    if (h->count == h->capacity) {
+        size_t newCap = h->capacity * 2;
+        ConversionRecord *tmp =
+            realloc(h->records, newCap * sizeof *tmp);
+        if (tmp == NULL) {
+            fprintf(stderr,
+                    "Error: memory allocation failed; record not stored.\n");
+            return 0;
+        }
+        h->records  = tmp;
+        h->capacity = newCap;
+    }
+    h->records[h->count++] = rec;
+    return 1;
+}
+
+static void historyFree(History *h)
+{
+    free(h->records);
+    h->records  = NULL;
+    h->count    = 0;
+    h->capacity = 0;
+}
+
+static void printRecord(size_t index, const ConversionRecord *r)
+{
+    const ConversionType *t = &CONVERSIONS[r->typeIndex];
+    printf("  %3zu. %-26s %12.4f %-3s = %12.4f %-3s\n",
+           index + 1, t->name,
+           r->inputValue, t->fromUnit,
+           r->outputValue, t->toUnit);
+}
+
+static void historyPrint(const History *h)
+{
+    if (h->count == 0) {
+        printf("\nHistory is empty.\n");
+        return;
+    }
+    printf("\n-- Conversion History --\n");
+    for (size_t i = 0; i < h->count; i++) {
+        printRecord(i, &h->records[i]);
+    }
+    printf("\n");
+}
+static void forEachRecord(History *h, RecordCallback cb, void *context)
+{
+    for (size_t i = 0; i < h->count; i++) {
+        cb(&h->records[i], context);
+    }
+}
