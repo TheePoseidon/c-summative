@@ -35,7 +35,7 @@ static int readNum(const char *p, double lo, double hi, int isInt, double *out){
     char b[128], *e;
     for(;;){
         printf("%s", p);
-        if(!fgets(b, sizeof b, stdin)) return 0;                  /* EOF */
+        if(!fgets(b, sizeof b, stdin)) return 0;
         if(!strchr(b,'\n')){ int c; while((c=getchar())!='\n'&&c!=EOF); }
         double v = isInt ? (double)strtol(b,&e,10) : strtod(b,&e);
         while(isspace((unsigned char)*e)) e++;
@@ -117,7 +117,7 @@ static void convert(Hist *h){
     puts("");
     for(int i=0;i<NT;i++) printf("  %d. %s\n", i+1, T[i].name);
     int c; double v; char p[48];
-    if(!readInt("Select conversion (1-8): ",1,NT,&c)) return;
+    if(!readInt("Select conversion: ",1,NT,&c)) return;
     snprintf(p,sizeof p,"Enter value in %s: ",T[c-1].fu);
     if(!readNum(p,-1e12,1e12,0,&v)) return;
     double out = T[c-1].fn(v);
@@ -165,11 +165,11 @@ int main(void){
     Hist h = {0};
     for(int run=1; run;){
         puts("\n-- UNIT CONVERSION TOOLKIT --\n"
-             " 1. Perform a conversion\n 2. View history\n 3. Search records\n"
+             " 1. Perform teh conversion\n 2. View history\n 3. Search records\n"
              " 4. Sort records\n 5. Apply callback operations\n"
              " 6. Save history\n 7. Load history\n 8. Exit");
         int c;
-        if(!readInt("Choice (1-8): ",1,8,&c)) break;
+        if(!readInt("Choice: ",1,8,&c)) break;
         switch(c){
             case 1: convert(&h);   break;
             case 2: showAll(&h);   break;
@@ -178,7 +178,7 @@ int main(void){
             case 5: callbacks(&h); break;
             case 6: save(&h);      break;
             case 7: load(&h);      break;
-            case 8: puts("Goodbye!"); run=0; break;
+            case 8: puts("Out!"); run=0; break;
         }
     }
     free(h.a);
