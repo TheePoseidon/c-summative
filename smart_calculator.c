@@ -181,7 +181,7 @@ int main(void){
             case 5: callbacks(&h); break;
             case 6: save(&h);      break;
             case 7: load(&h);      break;
-            case 8: puts("Goodbye!"); run=0; break;
+            case 8: puts("!"); run=0; break;
         }
     }
     free(h.a);
