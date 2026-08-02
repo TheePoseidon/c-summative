@@ -1,0 +1,7 @@
+===== File Analysis Report =====
+Input file : file6.txt
+--------------------------------
+Lines      : 1
+Words      : 5
+Characters : 28
+================================

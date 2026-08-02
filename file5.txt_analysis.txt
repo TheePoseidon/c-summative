@@ -1,0 +1,7 @@
+===== File Analysis Report =====
+Input file : file5.txt
+--------------------------------
+Lines      : 0
+Words      : 0
+Characters : 0
+================================

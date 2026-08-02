@@ -45,7 +45,7 @@ human_size(){
     du -sh "$1" 2>/dev/null | awk '{print $1}'
 }
 
-# Create Backup
+# Create Backp
 create_backup() {
     echo "Create backup"
     read -r -p "Enter the directory to backup: " source_dir

@@ -1,0 +1,7 @@
+===== File Analysis Report =====
+Input file : file4.txt
+--------------------------------
+Lines      : 3
+Words      : 9
+Characters : 43
+================================
